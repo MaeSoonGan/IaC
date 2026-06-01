@@ -1,9 +1,14 @@
 # 비밀번호 / 민감 정보
 terraform.tfvars
+*.tfvars
+*.tfvars.json
 
 # Terraform 상태 파일
 *.tfstate
-*.tfstate.backup
+*.tfstate.*
+.terraform.tfstate.lock.info
+
+# Terraform 디렉토리
 .terraform/
 .terraform.lock.hcl
 
@@ -17,3 +22,13 @@ crash.*.log
 # Terraformer 생성 파일
 generated/
 terraformer.exe
+
+# Override 파일
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI 설정 파일
+.terraformrc
+terraform.rc
