@@ -1,0 +1,19 @@
+# 비밀번호 / 민감 정보
+terraform.tfvars
+
+# Terraform 상태 파일
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# 크래시 로그
+crash.log
+crash.*.log
+
+# Bastion Private Key
+*.pem
+
+# Terraformer 생성 파일
+generated/
+terraformer.exe
