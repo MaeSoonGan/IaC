@@ -121,7 +121,6 @@ resource "aws_eks_addon" "kube_proxy" {
 # ================================
 # Node Group - Frontend
 # 사용자 Pod, 관리자 Pod
-# 장애 테스트 시 desired=2, min=2, max=4 로 변경
 # ================================
 resource "aws_eks_node_group" "frontend" {
   cluster_name    = aws_eks_cluster.main.name
@@ -134,9 +133,9 @@ resource "aws_eks_node_group" "frontend" {
   disk_size      = 20
 
   scaling_config {
-    desired_size = 1
+    desired_size = 2
     min_size     = 1
-    max_size     = 2
+    max_size     = 3
   }
 
   update_config {
@@ -157,7 +156,6 @@ resource "aws_eks_node_group" "frontend" {
 # ================================
 # Node Group - Service
 # 관리자서비스, 알림, 패션서비스, 중복서비스, 주문, 대회, 주문체결알림 Pod
-# 장애 테스트 시 desired=2, min=2, max=4 로 변경
 # ================================
 resource "aws_eks_node_group" "service" {
   cluster_name    = aws_eks_cluster.main.name
@@ -170,9 +168,9 @@ resource "aws_eks_node_group" "service" {
   disk_size      = 20
 
   scaling_config {
-    desired_size = 1
+    desired_size = 2
     min_size     = 1
-    max_size     = 2
+    max_size     = 3
   }
 
   update_config {
@@ -193,7 +191,6 @@ resource "aws_eks_node_group" "service" {
 # ================================
 # Node Group - Realtime (전용 노드)
 # 실시간 시세 전송 Pod 전용
-# 장애 테스트 시 desired=2, min=2, max=4 로 변경
 # ================================
 resource "aws_eks_node_group" "realtime" {
   cluster_name    = aws_eks_cluster.main.name
@@ -206,9 +203,9 @@ resource "aws_eks_node_group" "realtime" {
   disk_size      = 20
 
   scaling_config {
-    desired_size = 1
+    desired_size = 2
     min_size     = 1
-    max_size     = 2
+    max_size     = 3
   }
 
   update_config {
@@ -241,9 +238,9 @@ resource "aws_eks_node_group" "async" {
   disk_size      = 20
 
   scaling_config {
-    desired_size = 1
+    desired_size = 2
     min_size     = 1
-    max_size     = 2
+    max_size     = 3
   }
 
   update_config {

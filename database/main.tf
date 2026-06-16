@@ -54,21 +54,20 @@ resource "aws_db_instance" "primary" {
   }
 }
 
-# 장애 테스트 시 주석 해제
-# resource "aws_db_instance" "replica" {
-#   identifier          = "${var.prefix}-mariadb-replica"
-#   instance_class      = "db.t3.micro"
-#   replicate_source_db = aws_db_instance.primary.identifier
-#
-#   vpc_security_group_ids = [var.rds_sg_id]
-#   availability_zone      = "ap-northeast-2c"
-#   publicly_accessible    = false
-#
-#   skip_final_snapshot = true
-#
-#   tags = {
-#     Name = "${var.prefix}-mariadb-replica"
-#   }
-#
-#   depends_on = [aws_db_instance.primary]
-# }
+resource "aws_db_instance" "replica" {
+  identifier          = "${var.prefix}-mariadb-replica"
+  instance_class      = "db.t3.micro"
+  replicate_source_db = aws_db_instance.primary.identifier
+
+  vpc_security_group_ids = [var.rds_sg_id]
+  availability_zone      = "ap-northeast-2c"
+  publicly_accessible    = false
+
+  skip_final_snapshot = true
+
+  tags = {
+    Name = "${var.prefix}-mariadb-replica"
+  }
+
+  depends_on = [aws_db_instance.primary]
+}

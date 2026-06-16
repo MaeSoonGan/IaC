@@ -18,15 +18,16 @@ resource "aws_elasticache_replication_group" "main" {
   port                 = 6379
   parameter_group_name = "default.redis7"
 
-  num_cache_clusters         = 1
-  automatic_failover_enabled = false
-  multi_az_enabled           = false
+  num_cache_clusters         = 2
+  automatic_failover_enabled = true
+  multi_az_enabled           = true
 
   subnet_group_name  = aws_elasticache_subnet_group.main.name
   security_group_ids = [var.cache_sg_id]
 
   preferred_cache_cluster_azs = [
-    "ap-northeast-2a"
+    "ap-northeast-2a",
+    "ap-northeast-2c"
   ]
 
   snapshot_retention_limit = 1
