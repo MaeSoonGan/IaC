@@ -4,6 +4,8 @@
 > **리전**: `ap-northeast-2` (서울)
 > **Terraform**: `>= 1.5.0` / **AWS Provider**: `~> 5.0`
 
+<br>
+
 ---
 
 ## 목차
@@ -26,6 +28,8 @@
 9. [이중화 적용 체크리스트](#9-이중화-적용-체크리스트)
 10. [주의사항](#10-주의사항)
 
+<br>
+
 ---
 
 ## 1. 서비스 개요 및 아키텍처 설계 철학
@@ -33,6 +37,8 @@
 ### 서비스 소개
 
 한국투자증권 OpenAPI를 연동한 **모의투자 플랫폼**으로, 실제 주식 시장 데이터를 기반으로 가상 자산으로 투자를 연습할 수 있는 서비스입니다.
+
+<br>
 
 ### 채널계 / 계정계 분리 구조
 
@@ -45,20 +51,28 @@
 | **DR**       | On-Premises (DR 데이터센터)   | 계정계 이중화, Slave DB, Kafka 복제         |
 | **모니터링** | On-Premises (Monitoring 서버) | Prometheus, Grafana, Loki, AlertManager     |
 
+<br>
+
 ### 채널계를 AWS에 구축한 이유
 
 - **탄력적 확장**: 주식 시장 개장(09:00) 직후와 마감(15:30) 직전에 트래픽이 급증합니다. EKS Auto Scaling으로 자동 대응합니다.
 - **Stateless 워크로드 최적화**: 채널계 서비스는 상태를 갖지 않아 컨테이너화에 적합합니다.
 - **관리형 서비스 활용**: RDS, ElastiCache 등 AWS 관리형 서비스로 운영 부담을 줄입니다.
 
+<br>
+
 ### 계정계를 On-Premises에 유지하는 이유
 
 - **초저지연 요구사항**: 주문 체결 엔진은 마이크로초 단위 처리가 필요합니다.
 - **금융 데이터 보안**: 계정 원장, 체결 내역 등 핵심 금융 데이터는 자체 데이터센터에서 엄격히 관리합니다.
 
+<br>
+
 ### AWS ↔ On-Premises 연결
 
 Site-to-Site VPN을 통해 암호화된 전용 터널로 채널계(AWS)와 계정계(On-Premises)가 통신합니다.
+
+<br>
 
 ---
 
@@ -100,6 +114,8 @@ Site-to-Site VPN을 통해 암호화된 전용 터널로 채널계(AWS)와 계�
          ├── DR 데이터센터
          └── Monitoring 서버 (Prometheus → EKS 메트릭 수집)
 ```
+
+<br>
 
 ---
 
@@ -158,6 +174,8 @@ Terraform/
 └── .gitignore
 ```
 
+<br>
+
 ---
 
 ## 4. 모듈별 상세 설명
@@ -171,6 +189,8 @@ Terraform/
 | CIDR         | `10.14.0.0/16` | 65,536개 IP 확보. 향후 서브넷 추가 시에도 여유 있음 |
 | DNS Hostname | 활성화           | EKS 내부 서비스 디스커버리(CoreDNS)에 필수          |
 | DNS Support  | 활성화           | RDS 엔드포인트 도메인 해석에 필요                   |
+
+<br>
 
 #### 서브넷 (총 8개, AZ 이중화)
 
@@ -189,6 +209,8 @@ Terraform/
 
 역할별로 서브넷을 분리한 이유는 보안 그룹과 라우팅 정책을 세밀하게 제어하기 위함입니다. DB와 Redis 서브넷은 인터넷 경로가 없으며 EKS 노드에서의 접근만 허용합니다.
 
+<br>
+
 #### EKS 서브넷 태그
 
 EKS 서브넷에는 아래 태그를 반드시 붙입니다. AWS Load Balancer Controller가 Ingress 생성 시 ALB를 배치할 서브넷을 자동으로 탐색하는 데 사용됩니다.
@@ -200,11 +222,15 @@ kubernetes.io/role/internal-elb          = 1
 
 Public 서브넷에는 NLB 배치를 위해 `kubernetes.io/role/elb = 1` 태그를 붙입니다.
 
+<br>
+
 #### NAT Gateway
 
 Public Subnet A에 1개 배치합니다. EKS 워커 노드가 ECR에서 컨테이너 이미지를 Pull하거나 한국투자증권 API 같은 외부 서비스를 호출할 때 이 NAT GW를 통해 단방향 아웃바운드만 허용합니다.
 
 현재는 비용 절감을 위해 AZ-A에만 1개 운영합니다. 운영 전환 시 AZ-C에 추가하여 단일 장애점을 제거합니다.
+
+<br>
 
 #### 라우팅 테이블
 
@@ -215,6 +241,8 @@ Public Subnet A에 1개 배치합니다. EKS 워커 노드가 ECR에서 컨테�
 | rt-private-c  | EKS-C, DB-C, Redis-C | → NAT GW(A) (이중화 시 NAT GW(C)로 분리) |
 
 AZ별로 라우팅 테이블을 분리한 이유는 이중화 적용 시 각 AZ의 NAT GW를 독립적으로 연결하기 위해서입니다.
+
+<br>
 
 ---
 
@@ -232,6 +260,8 @@ AZ별로 라우팅 테이블을 분리한 이유는 이중화 적용 시 각 AZ�
 
 **On-Premises 3곳에 443을 허용하는 이유**: Site-to-Site VPN으로 연결된 계정계 서버, DR 서버, Prometheus 모니터링 서버에서 EKS 서비스로 접근할 수 있게 합니다.
 
+<br>
+
 ---
 
 ### 4.3 EKS (Kubernetes Cluster)
@@ -245,9 +275,13 @@ AZ별로 라우팅 테이블을 분리한 이유는 이중화 적용 시 각 AZ�
 | `endpoint_private_access` | `true`                  | VPC 내부(Bastion, 노드)에서는 API 서버 접근 가능                       |
 | CloudWatch 로그             | api, audit, authenticator | 보안 감사 추적 및 인증 이력 기록                                       |
 
+<br>
+
 #### OIDC Provider
 
 쿠버네티스 ServiceAccount에 IAM Role을 연결(IRSA)하기 위해 필요합니다. 노드 전체에 과도한 IAM 권한을 부여하는 대신, Pod 수준에서 필요한 최소 권한만 부여할 수 있습니다.
+
+<br>
 
 #### Add-ons
 
@@ -258,6 +292,8 @@ AZ별로 라우팅 테이블을 분리한 이유는 이중화 적용 시 각 AZ�
 | `kube-proxy` | Service → Pod 라우팅  | Service 접근 불가      |
 
 CoreDNS는 frontend, service 노드 그룹 생성 이후 설치합니다. Pod를 실행할 노드가 준비된 후에 설치해야 Pending 상태를 피할 수 있습니다.
+
+<br>
 
 #### 노드 그룹 (총 5개)
 
@@ -277,6 +313,8 @@ CoreDNS는 frontend, service 노드 그룹 생성 이후 설치합니다. Pod를
 
 모든 노드 그룹은 EKS-subnetA, EKS-subnetC 양쪽에 배포되어 AZ 이중화가 적용됩니다.
 
+<br>
+
 ---
 
 ### 4.4 Database
@@ -292,6 +330,8 @@ CoreDNS는 frontend, service 노드 그룹 생성 이후 설치합니다. Pod를
 | 백업 윈도우             | `03:00-04:00`     | 주식 시장 종료 후 트래픽 최저 시간대                  |
 | `publicly_accessible` | `false`           | 인터넷 직접 접근 불가                                 |
 
+<br>
+
 #### RDS Replica (현재 비활성 — 주석 처리)
 
 ```hcl
@@ -305,6 +345,8 @@ resource "aws_db_instance" "replica" {
 ```
 
 Primary(AZ-A) 장애 시 Replica(AZ-C)로 페일오버하여 서비스를 유지합니다. 현재는 비용 절감을 위해 비활성화 상태입니다.
+
+<br>
 
 ---
 
@@ -326,6 +368,8 @@ Primary(AZ-A) 장애 시 Replica(AZ-C)로 페일오버하여 서비스를 유지
 - 실시간 주가 데이터 Pub/Sub → WebSocket 클라이언트 즉시 전달
 - DB 반복 조회 결과 캐싱
 
+<br>
+
 #### 이중화 적용 시 변경 (현재 비활성)
 
 ```hcl
@@ -335,6 +379,8 @@ automatic_failover_enabled  = true
 multi_az_enabled            = true
 preferred_cache_cluster_azs = ["ap-northeast-2a", "ap-northeast-2c"]
 ```
+
+<br>
 
 ---
 
@@ -350,6 +396,8 @@ preferred_cache_cluster_azs = ["ap-northeast-2a", "ap-northeast-2c"]
 - **ALB를 뒤에 두는 이유**: L7 경로 기반 라우팅(`/api/*`, `/ws/*` 등)과 헬스체크 기능을 사용합니다.
 - **ALB를 Internal로 설정한 이유**: NLB를 통해서만 접근 가능하도록 강제하여 WAF를 반드시 거치게 합니다.
 
+<br>
+
 #### WAF
 
 | 규칙                                     | 차단 대상                                         |
@@ -359,6 +407,8 @@ preferred_cache_cluster_azs = ["ap-northeast-2a", "ap-northeast-2c"]
 
 AWS Managed Rules를 선택한 이유: AWS 보안팀이 새로운 위협 발견 시 자동으로 업데이트합니다. 별도 관리 없이 최신 위협에 대응할 수 있습니다.
 
+<br>
+
 #### S3 버킷 (2개)
 
 | 버킷                          | 용도                        | 주요 설정                                                                                                       |
@@ -366,12 +416,16 @@ AWS Managed Rules를 선택한 이유: AWS 보안팀이 새로운 위협 발견 
 | `maesoongan-backup`         | tfstate 백업, 로그 아카이빙 | AES-256 암호화, 버전 관리, 퍼블릭 접근 전체 차단                                                                |
 | `maesoongan-profile-images` | 회원 프로필 이미지 저장     | `profile-images/*` 경로 GetObject만 공개, PutObject는 IAM Role로만, CORS 설정, 수명주기(noncurrent 30일 삭제) |
 
+<br>
+
 #### Route53
 
 콘솔에서 생성된 기존 Hosted Zone을 `data` 소스로 참조합니다. Hosted Zone을 Terraform으로 재생성하면 NS 레코드가 바뀌어 도메인 연결이 끊기기 때문에 참조 방식을 사용합니다.
 
 - `{domain}` A 레코드 → NLB (Alias)
 - `www.{domain}` A 레코드 → NLB (Alias)
+
+<br>
 
 ---
 
@@ -385,6 +439,8 @@ AWS Managed Rules를 선택한 이유: AWS 보안팀이 새로운 위협 발견 
 | AMI         | `data` 소스로 최신 AL2023 자동 조회 | AMI ID 하드코딩 없이 항상 최신 이미지 사용 |
 | Private Key | RSA 4096 / Terraform 자동 생성        | `terraform output`으로만 확인 가능       |
 
+<br>
+
 #### IAM Role (SSM 접속용)
 
 ```
@@ -396,6 +452,8 @@ aws_iam_role.bastion
 ```
 
 SSH 22포트를 열지 않고 Session Manager로 접속합니다. 접속 이력이 CloudTrail에 자동 기록되어 감사 추적이 가능합니다.
+
+<br>
 
 #### Bastion 접속 및 활용
 
@@ -414,6 +472,8 @@ kubectl get pods -A
 mysql -h <rds-endpoint> -u admin -p fisaschool
 ```
 
+<br>
+
 ---
 
 ## 5. IAM 설계
@@ -428,6 +488,8 @@ mysql -h <rds-endpoint> -u admin -p fisaschool
 
 **ECR ReadOnly만 부여한 이유**: 워커 노드는 이미지를 읽기만 하면 됩니다. 쓰기 권한 배제로 노드 침해 시 악성 이미지 업로드를 방지합니다.
 
+<br>
+
 ### IRSA (IAM Roles for Service Accounts)
 
 EKS OIDC Provider를 통해 쿠버네티스 ServiceAccount에 IAM Role을 연결합니다. 노드 전체에 권한을 부여하는 방식 대신 Pod 수준 최소 권한을 적용합니다.
@@ -437,6 +499,8 @@ EKS OIDC Provider를 통해 쿠버네티스 ServiceAccount에 IAM Role을 연결
 | `MaesoonganExternalSecretsRole`                           | `external-secrets/external-secrets`        | Secrets Manager 읽기 (`maesoongan/prod/*`) |
 | `eksctl-maesoongan-cluster-addon-iamserviceacc-Role1-...` | `kube-system/aws-load-balancer-controller` | ALB/NLB 자동 프로비저닝                      |
 | `MaesoonganGitHubActionsEcrRole`                          | GitHub Actions (OIDC)                        | ECR 이미지 Push (지정 리포지토리만)          |
+
+<br>
 
 ### GitHub Actions ECR Role
 
@@ -451,6 +515,8 @@ GitHub Actions OIDC를 사용하여 AWS 자격증명 없이 ECR에 이미지를 
 
 허용 ECR 리포지토리: `maesoongan/` 하위 11개 서비스 리포지토리 (admin-service, auth-service, contest-service, market-service, market-realtime-service, user-realtime-service, order-service, trade-sync-worker, notification-api, frontend-admin, frontend-user)
 
+<br>
+
 ### auth-service S3 정책
 
 ```hcl
@@ -459,6 +525,8 @@ GitHub Actions OIDC를 사용하여 AWS 자격증명 없이 ECR에 이미지를 
 ```
 
 auth-service가 프로필 이미지를 업로드할 때만 사용하는 최소 권한 정책입니다. 해당 정책은 auth-service IRSA Role에 연결이 필요합니다.
+
+<br>
 
 ---
 
@@ -476,6 +544,8 @@ auth-service가 프로필 이미지를 업로드할 때만 사용하는 최소 �
 | `onprem_dr_cidr`         | 없음           | On-Premises DR 데이터센터 CIDR      |
 | `onprem_monitoring_cidr` | 없음           | On-Premises 모니터링 서버 CIDR      |
 
+<br>
+
 ### `terraform.tfvars` (git 제외)
 
 ```hcl
@@ -487,6 +557,8 @@ onprem_main_cidr       = "x.x.x.x/xx"
 onprem_dr_cidr         = "x.x.x.x/xx"
 onprem_monitoring_cidr = "x.x.x.x/xx"
 ```
+
+<br>
 
 ---
 
@@ -505,6 +577,8 @@ terraform plan
 terraform apply
 ```
 
+<br>
+
 ### 특정 모듈만 배포
 
 ```bash
@@ -512,11 +586,15 @@ terraform apply -target=module.network
 terraform apply -target=module.kubernetes_cluster
 ```
 
+<br>
+
 ### 리소스 삭제
 
 ```bash
 terraform destroy
 ```
+
+<br>
 
 ---
 
@@ -529,6 +607,8 @@ EKS Private Endpoint이므로 VPN 연결 또는 Bastion에서 실행해야 합�
 ```bash
 aws eks update-kubeconfig --region ap-northeast-2 --name maesoongan-cluster
 ```
+
+<br>
 
 ### 2단계 — AWS Load Balancer Controller 설치
 
@@ -543,11 +623,15 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
   --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=<IRSA_ROLE_ARN>
 ```
 
+<br>
+
 ### 3단계 — 팀원 EKS 접근 권한 추가
 
 ```
 콘솔 → EKS → maesoongan-cluster → Access 탭 → Create access entry
 ```
+
+<br>
 
 ### 4단계 — Site-to-Site VPN 설정 (On-Premises 연동)
 
@@ -559,6 +643,8 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
 4. 구성 파일 다운로드 → pfSense 적용
 ```
 
+<br>
+
 ### 5단계 — HTTPS 활성화 (ACM 인증서 발급 후)
 
 ```hcl
@@ -569,6 +655,8 @@ variable "acm_certificate_arn" { ... }
 # 3. terraform apply
 ```
 
+<br>
+
 | 작업                    | 완료 여부 |
 | ----------------------- | --------- |
 | kubeconfig 연결         | ☐        |
@@ -576,6 +664,8 @@ variable "acm_certificate_arn" { ... }
 | 팀원 EKS 접근 권한 추가 | ☐        |
 | VPN 설정 (pfSense 연동) | ☐        |
 | HTTPS 활성화            | ☐        |
+
+<br>
 
 ---
 
@@ -592,6 +682,8 @@ variable "acm_certificate_arn" { ... }
 | NLB           | AZ-A, C 양쪽       | **이미 적용됨**                      | —                                                     |
 | ALB           | AZ-A, C 양쪽       | **이미 적용됨**                      | —                                                     |
 | Bastion       | 단일 (AZ-A)        | 관리 목적이므로 이중화 불필요              | —                                                     |
+
+<br>
 
 ---
 
