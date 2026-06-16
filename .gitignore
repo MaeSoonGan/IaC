@@ -22,6 +22,7 @@ crash.*.log
 # Terraformer 생성 파일
 generated/
 terraformer.exe
+terraformer-output/
 
 # Override 파일
 override.tf
