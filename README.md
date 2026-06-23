@@ -1,20 +1,32 @@
-# AWS 인프라 구성 설명서
+# ☁️ MaeSoonGan AWS Infrastructure
 
-> **프로젝트**: 한국투자증권 OpenAPI 기반 모의투자 서비스 — 채널계 인프라
-> **리전**: `ap-northeast-2` (서울)
-> **Terraform**: `>= 1.5.0` / **AWS Provider**: `~> 5.0`
+## ✍️ 프로젝트 한 줄 소개
+
+한국투자증권 OpenAPI 기반 모의투자 서비스의 **채널계 인프라**를 Terraform으로 코드화(IaC)한 레포지토리입니다.
+
+<br>
+
+## 🛫 레포지토리 개요
+
+| 항목 | 내용 |
+|------|------|
+| **프로젝트** | 한국투자증권 OpenAPI 기반 모의투자 서비스 — 채널계 인프라 |
+| **리전** | `ap-northeast-2` (서울) |
+| **Terraform** | `>= 1.5.0` |
+| **AWS Provider** | `~> 5.0` |
+| **구성 방식** | 모듈 단위 IaC (Network / Security Group / Load Balancer / EKS / Database / Cache / Bastion) |
 
 <br>
 
 ---
 
-## 전체 아키텍처
+## 🗺️ 전체 아키텍처
 
 <img src="docs/full_arch.png" width="100%" />
 
 <br>
 
-## AWS 아키텍처
+## ☁️ AWS 아키텍처
 
 <img src="docs/aws_arch.png" width="100%" />
 
@@ -22,7 +34,7 @@
 
 ---
 
-## 목차
+## 📋 목차
 
 1. [서비스 개요 및 아키텍처 설계 철학](#1-서비스-개요-및-아키텍처-설계-철학)
 2. [디렉토리 구조](#2-디렉토리-구조)
@@ -87,7 +99,7 @@ Site-to-Site VPN을 통해 암호화된 전용 터널로 채널계(AWS)와 계�
 
 ---
 
-## 2. 디렉토리 구조
+## 📁 2. 디렉토리 구조
 
 ```
 Terraform/
@@ -147,7 +159,7 @@ Terraform/
 
 ---
 
-## 3. 모듈별 상세 설명
+## 🧩 3. 모듈별 상세 설명
 
 ### 3.1 Network
 
@@ -409,7 +421,7 @@ mysql -h <rds-endpoint> -u admin -p fisaschool
 
 ---
 
-## 4. IAM 설계
+## 🔐 4. IAM 설계
 
 ### EKS 관련 IAM Role
 
@@ -445,7 +457,7 @@ GitHub Actions OIDC를 사용하여 AWS 자격증명 없이 ECR에 이미지를 
 
 ---
 
-## 5. 변수 설정
+## ⚙️ 5. 변수 설정
 
 ### `variables.tf`
 
@@ -477,7 +489,7 @@ onprem_monitoring_cidr = "x.x.x.x/xx"
 
 ---
 
-## 6. 실행 방법
+## ▶️ 6. 실행 방법
 
 ```bash
 # 초기화
@@ -501,7 +513,7 @@ terraform apply -target=module.kubernetes_cluster
 
 ---
 
-## 7. Apply 후 필수 작업
+## 🔧 7. Apply 후 필수 작업
 
 ### 1단계 — kubeconfig 연결
 
@@ -548,7 +560,7 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
 
 ---
 
-## 8. 이중화 현황
+## 🔁 8. 이중화 현황
 
 | 항목 | 상태 | 파일 |
 |------|------|------|
@@ -566,7 +578,7 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
 
 ---
 
-## 9. 주의사항
+## ⚠️ 9. 주의사항
 
 - `terraform.tfvars` — git에 절대 올리지 않습니다. `.gitignore`에 포함되어 있습니다.
 - `terraform.tfstate` — git에 올리지 않습니다. S3 백엔드 또는 로컬 관리합니다.
